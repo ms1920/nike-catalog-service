@@ -1,0 +1,14 @@
+{
+  // Production build: `src` only.
+  //
+  // The base tsconfig includes `tests` so `npm run typecheck` covers them, but
+  // that makes the project root the common source root — emitting to
+  // dist/src/** and shipping compiled tests. Narrowing rootDir to `src` here
+  // gives dist/server.js and keeps test code out of the build artifact.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/**/*.ts"]
+}

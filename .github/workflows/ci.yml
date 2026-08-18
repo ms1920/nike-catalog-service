@@ -1,0 +1,195 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Manual runs, useful for re-verifying a green main without pushing a commit.
+  workflow_dispatch:
+
+# A new push to the same branch cancels the previous run. Without this, a burst of
+# commits queues up runs that are already obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # Fast feedback: syntax, types and formatting fail in seconds, so there is no
+  # point spending build minutes on the slower jobs until these pass.
+  static:
+    name: Types and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck API (src + tests)
+        run: npx tsc -p tsconfig.json --noEmit
+
+      - name: Typecheck web
+        run: npx tsc -p web/tsconfig.json --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Formatting
+        run: npm run format:check
+
+  unit:
+    name: Unit and integration tests
+    runs-on: ubuntu-latest
+    # Matrix across the supported floor and current LTS. Node 22 introduced
+    # behaviour this code relies on, and 24 is where it will actually run.
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tests with coverage
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: matrix.node == '22'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Build artifacts
+    runs-on: ubuntu-latest
+    needs: static
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build API
+        run: npm run build
+
+      - name: Build storefront
+        run: npm run build:web
+
+      # A build that emits nothing still exits 0, so assert the entry point exists
+      # rather than trusting the exit code.
+      - name: Verify build output
+        run: |
+          test -f dist/server.js || { echo "dist/server.js missing"; exit 1; }
+          test -f dist-web/index.html || { echo "dist-web/index.html missing"; exit 1; }
+          echo "API and web artifacts present"
+
+      - name: Run the compiled server on bare node
+        # Proves the emitted JavaScript actually boots without tsx or a loader.
+        run: |
+          node dist/server.js &
+          SERVER_PID=$!
+          sleep 3
+          curl -fsS http://localhost:3000/ready || { kill $SERVER_PID; exit 1; }
+          kill $SERVER_PID
+          echo "compiled server booted and became ready"
+
+  smoke:
+    name: Smoke test the running API
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Start API and smoke test it
+        # Exercises a real socket end to end — the purchase flow, idempotent
+        # replay and session revocation — which in-process tests cannot cover.
+        run: |
+          node dist/server.js > /tmp/api.log 2>&1 &
+          echo $! > /tmp/api.pid
+          node scripts/smoke.mjs http://localhost:3000
+          kill "$(cat /tmp/api.pid)"
+
+      - name: API log on failure
+        if: failure()
+        run: cat /tmp/api.log
+
+  docker:
+    name: Docker image and compose smoke
+    runs-on: ubuntu-latest
+    needs: static
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: api
+          push: false
+          load: true
+          tags: nike-catalog-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          push: false
+          load: true
+          tags: nike-catalog-web:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Bring the stack up and smoke test through nginx
+        # Tests the deployed topology, not just the images: the storefront is
+        # served by nginx and the API is reached through its proxy, so a broken
+        # proxy path fails here rather than in front of a reviewer.
+        run: |
+          docker compose up -d --build
+          npm ci
+          node scripts/smoke.mjs http://localhost:8080
+          curl -fsS http://localhost:8080/ | grep -q "Just Do It" \
+            && echo "storefront served by nginx"
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

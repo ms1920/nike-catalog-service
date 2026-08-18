@@ -1,0 +1,109 @@
+/* Hallmark · tokens · theme: studied-DNA (source: url https://www.nike.com/)
+ * observed-fonts: Helvetica Now Display Medium + Helvetica Now Text -> Inter Tight + Inter
+ * observed-paper: #FFFFFF · observed-ink: #111111 · observed-radius: 30px (pill) · elevation: none
+ * rhythm: unknown (URL mode)
+ *
+ * Every value below was extracted from Nike's live CSS via Firecrawl, not chosen
+ * by taste. Source hex is kept beside each OKLCH value so the provenance stays
+ * verifiable.
+ */
+
+:root {
+  /* ---- Colour -----------------------------------------------------------
+   * Nike's palette is achromatic by design: a white canvas, near-black ink,
+   * two greys. Colour arrives from product photography, not from chrome.
+   * Note the ink is #111111, never pure black — a deliberate softening that
+   * reads as printed rather than digital.
+   */
+  --color-paper: oklch(100% 0 0); /* #FFFFFF */
+  --color-ink: oklch(17.8% 0 0); /* #111111 */
+  --color-ink-secondary: oklch(52.2% 0.004 265); /* #707072  Nike grey */
+  --color-ink-tertiary: oklch(64.5% 0.003 265); /* #9A9A9D */
+  --color-media: oklch(96.8% 0 0); /* #F5F5F5  product tile */
+  --color-media-deep: oklch(92.2% 0 0); /* #E5E5E5 */
+  --color-rule: oklch(90.6% 0 0); /* #E5E5E5  hairlines */
+  --color-rule-strong: oklch(80% 0 0); /* #C4C4C4 */
+
+  /* Nike reserves red for markdowns and scarcity. Used on two labels only. */
+  --color-sale: oklch(55.7% 0.188 34); /* #D43F21 */
+
+  --color-focus: oklch(52% 0.19 258); /* accessible focus ring */
+  --color-paper-invert: oklch(17.8% 0 0);
+  --color-ink-invert: oklch(100% 0 0);
+  /* Nike lightens its black fill on hover rather than shifting hue. Declared as
+   * a token instead of a relative oklch() so it works without relative-colour
+   * support and stays inspectable. */
+  --color-ink-hover: oklch(32% 0 0); /* #3D3D3D */
+  --color-scrim: oklch(17.8% 0 0 / 0.4);
+
+  /* ---- Type ------------------------------------------------------------- */
+  --font-display: 'Inter Tight', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  /* Nike's observed sizes: h2 32px, body 16px.
+   *
+   * Headings interpolate with viewport width rather than stepping at a
+   * breakpoint, so text scales continuously as the window is dragged. The
+   * observed desktop value is the *ceiling* of each clamp, so Nike's real sizes
+   * are what render at full width — the small end is a graceful reduction, not
+   * a redefinition. Body sizes stay fixed; scaling body copy with the viewport
+   * hurts readability.
+   */
+  --text-xs: 0.6875rem; /* 11px  micro-labels */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 1rem; /* 16px  observed body */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: clamp(1.25rem, 1.05rem + 0.9vw, 1.5rem); /* 20 -> 24px */
+  --text-2xl: clamp(1.5rem, 1.13rem + 1.7vw, 2rem); /* 24 -> 32px observed h2 */
+  --text-3xl: clamp(2rem, 1.35rem + 2.9vw, 2.75rem); /* 32 -> 44px */
+  --text-display: clamp(2.75rem, 1.4rem + 6vw, 4.25rem); /* 44 -> 68px */
+
+  --tracking-tight: -0.02em;
+  --tracking-display: -0.035em;
+  --tracking-label: 0.08em;
+
+  --leading-tight: 1.05;
+  --leading-snug: 1.25;
+  --leading-body: 1.55;
+
+  /* ---- Space — 4pt base unit, as observed ------------------------------ */
+  --space-2xs: 0.25rem; /*  4px */
+  --space-xs: 0.5rem; /*  8px */
+  --space-sm: 0.75rem; /* 12px */
+  --space-md: 1rem; /* 16px */
+  --space-lg: 1.5rem; /* 24px */
+  --space-xl: 2rem; /* 32px */
+  --space-2xl: 3rem; /* 48px */
+  --space-3xl: 4rem; /* 64px */
+  --space-4xl: 6rem; /* 96px */
+
+  /* ---- Radius ----------------------------------------------------------
+   * Two values only. Controls are pills (30px observed on buttons, 24px on
+   * inputs); media and cards are square-cornered. The absence of a mid-range
+   * radius is the point — no 8px/12px "friendly card" rounding anywhere.
+   */
+  --radius-pill: 1.875rem; /* 30px  observed buttonPrimary */
+  --radius-input: 1.5rem; /* 24px  observed input */
+  --radius-none: 0;
+
+  /* ---- Rules ----------------------------------------------------------- */
+  --rule-hair: 1px;
+  --rule-thick: 2px;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.64, 0, 0.78, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- Layout ---------------------------------------------------------- */
+  --rail-width: 15rem;
+  --masthead-height: 3.75rem;
+  --measure: 62ch;
+
+  /* Nike ships no shadows. This token exists to be referenced by name and stay
+   * `none`, so a future contributor doesn't reach for an ad-hoc box-shadow. */
+  --elevation-none: none;
+}

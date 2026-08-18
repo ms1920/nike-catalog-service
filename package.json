@@ -1,0 +1,56 @@
+{
+  "name": "nike-catalog-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Catalog service: REST API with search, filtering, faceting, and pagination",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:web": "vite",
+    "build:web": "vite build",
+    "preview:web": "vite preview",
+    "typecheck:web": "tsc -p web/tsconfig.json --noEmit",
+    "start": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "serve": "node dist/server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "smoke": "node scripts/smoke.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run typecheck && npm run typecheck:web && npm run lint && npm run format:check && npm test",
+    "db:reset": "node --input-type=module -e \"import{rm}from'node:fs/promises';await rm(process.env.DATA_FILE??'data/store.enc.json',{force:true});console.log('datastore removed — it will be re-seeded on next start')\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@types/supertest": "^6.0.2",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.39.5",
+    "globals": "^15.15.0",
+    "prettier": "^3.9.6",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.67.0",
+    "vite": "^6.4.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,45 @@
+# Two services and nothing else: no database, no cache, no message broker.
+#
+# That is the point of the design — the whole system runs offline from a clean
+# clone with nothing to provision. `docker compose up --build` gives a working
+# storefront at http://localhost:8080.
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # Set DATA_KEY here (or in a .env file compose picks up) to make the
+      # datastore genuinely undecryptable without it. Left unset, the committed
+      # default is used and the API logs a warning saying so.
+      DATA_KEY: ${DATA_KEY:-}
+      DATA_FILE: /app/data/store.enc.json
+    volumes:
+      # Named volume, not a bind mount: the container writes as the unprivileged
+      # `node` user, and a host bind mount would inherit host ownership and fail.
+      - catalog-data:/app/data
+    # No published port. Only nginx needs to reach it, and keeping it off the host
+    # means the API cannot be hit without the proxy's forwarded-for headers, which
+    # the rate limiter depends on.
+    expose:
+      - '3000'
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      target: web
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        # Waits for the healthcheck, not just for the process to exist, so the
+        # first page load cannot race the datastore decrypting.
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  catalog-data:

@@ -1,0 +1,7 @@
+dist
+dist-web
+coverage
+node_modules
+# Encrypted blob — reformatting it would corrupt nothing but churn the diff.
+data
+package-lock.json

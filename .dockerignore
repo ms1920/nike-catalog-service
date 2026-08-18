@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-web
+coverage
+.git
+.github
+*.log
+.env
+.DS_Store
+tmp
+# The datastore is generated at runtime; baking a build-time copy into the image
+# would ship stale carts and orders and then overwrite the volume's real data.
+data

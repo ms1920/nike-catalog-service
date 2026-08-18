@@ -390,13 +390,13 @@ absent.
 
 Five jobs, ordered so the cheapest failures surface first.
 
-| Job | What it proves |
-| --- | --- |
-| `static` | Types compile (API + web), lint passes, formatting is clean |
-| `unit` | 178 tests on Node 22 and 24, with coverage |
-| `build` | Artifacts exist **and** the compiled JS boots on bare `node` and reaches ready |
-| `smoke` | A real server over a real socket: purchase flow, idempotent replay, session revocation |
-| `docker` | Both images build, then the composed stack is smoke-tested *through nginx* |
+| Job      | What it proves                                                                         |
+| -------- | -------------------------------------------------------------------------------------- |
+| `static` | Types compile (API + web), lint passes, formatting is clean                            |
+| `unit`   | 178 tests on Node 22 and 24, with coverage                                             |
+| `build`  | Artifacts exist **and** the compiled JS boots on bare `node` and reaches ready         |
+| `smoke`  | A real server over a real socket: purchase flow, idempotent replay, session revocation |
+| `docker` | Both images build, then the composed stack is smoke-tested _through nginx_             |
 
 The `build` job asserts `dist/server.js` exists rather than trusting the exit code, since
 a build that emits nothing still exits 0. The `docker` job smoke-tests through the proxy

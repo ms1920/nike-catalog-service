@@ -48,18 +48,32 @@ async function json(path, options = {}) {
   return { status: response.status, body, headers: response.headers };
 }
 
-/** Waits for the server to accept connections before asserting anything. */
+/**
+ * Waits for the server to accept connections before asserting anything.
+ *
+ * Requires a JSON body, not merely a 200. Behind a single-page-app catch-all, an
+ * unrouted path returns index.html with a 200 — so a status-only check reports
+ * "ready" while actually receiving HTML, and every later assertion fails for a
+ * reason that has nothing to do with the API.
+ */
 async function waitForReady(attempts = 40) {
+  let lastSeen = 'no response';
   for (let i = 0; i < attempts; i += 1) {
     try {
       const res = await fetch(`${BASE}/ready`);
-      if (res.ok) return;
-    } catch {
-      /* not up yet */
+      if (res.ok) {
+        const type = res.headers.get('content-type') ?? '';
+        if (type.includes('application/json')) return;
+        lastSeen = `200 but content-type was ${type} — is /ready routed to the API?`;
+      } else {
+        lastSeen = `status ${res.status}`;
+      }
+    } catch (error) {
+      lastSeen = error instanceof Error ? error.message : String(error);
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error(`API at ${BASE} never became ready`);
+  throw new Error(`API at ${BASE} never became ready (${lastSeen})`);
 }
 
 console.log(`Smoke testing ${BASE}`);
